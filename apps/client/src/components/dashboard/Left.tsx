@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import { Library, Search } from "lucide-react";
 import { motion } from "motion/react";
 import { AudioUploaderMinimal } from "../AudioUploaderMinimal";
+import { SystemAudioCapture } from "../SystemAudioCapture";
 import { Button } from "../ui/button";
 import { Separator } from "../ui/separator";
 import { AudioControls } from "./AudioControls";
@@ -95,6 +96,8 @@ export const Left = ({ className }: LeftProps) => {
 
         <div className="pl-1">
           <AudioUploaderMinimal />
+          {/* Capture system audio and share to room */}
+          <SystemAudioCapture />
         </div>
       </motion.div>
     </motion.div>
