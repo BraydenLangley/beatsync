@@ -7,6 +7,7 @@ export const handleWebSocketUpgrade = (req: Request, server: Server) => {
   const url = new URL(req.url);
   const roomId = url.searchParams.get("roomId");
   const username = url.searchParams.get("username");
+  console.log(`Upgrade request for room ${roomId} user ${username}`);
 
   if (!roomId || !username) {
     // Check which parameters are missing and log them
@@ -39,6 +40,7 @@ export const handleWebSocketUpgrade = (req: Request, server: Server) => {
   });
 
   if (!upgraded) {
+    console.error(`WebSocket upgrade failed for room ${roomId} user ${username}`);
     return errorResponse("WebSocket upgrade failed");
   }
 

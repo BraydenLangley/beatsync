@@ -87,24 +87,38 @@ export const WebSocketManager = ({
       return;
     }
 
-    const SOCKET_URL = `${process.env.NEXT_PUBLIC_WS_URL}?roomId=${roomId}&username=${username}`;
-    console.log("Creating new socket to", SOCKET_URL);
-    const ws = new WebSocket(SOCKET_URL);
-    setSocket(ws);
+    let ws: WebSocket | null = null;
+    let retries = 0;
 
-    ws.onopen = () => {
-      console.log("Websocket onopen fired.");
+    const connect = () => {
+      const SOCKET_URL = `${process.env.NEXT_PUBLIC_WS_URL}?roomId=${roomId}&username=${username}`;
+      console.log("Creating new socket to", SOCKET_URL);
+      ws = new WebSocket(SOCKET_URL);
+      setSocket(ws);
 
-      // Start syncing
-      sendNTPRequest();
-    };
+      ws.onopen = () => {
+        console.log("Websocket onopen fired.");
 
-    ws.onclose = () => {
-      console.log("Websocket onclose fired.");
-    };
+        // Start syncing
+        sendNTPRequest();
+        retries = 0; // reset retry counter on success
+      };
 
-    ws.onmessage = async (msg) => {
-      const response = WSResponseSchema.parse(JSON.parse(msg.data));
+      ws.onclose = () => {
+        console.log("Websocket onclose fired.");
+        setSocket(null);
+        if (retries < 5) {
+          retries += 1;
+          setTimeout(connect, 1000 * retries);
+        }
+      };
+
+      ws.onerror = (err) => {
+        console.error("Websocket error", err);
+      };
+
+      ws.onmessage = async (msg) => {
+        const response = WSResponseSchema.parse(JSON.parse(msg.data));
 
       if (response.type === "NTP_RESPONSE") {
         const ntpMeasurement = handleNTPResponse(response);
@@ -191,10 +205,11 @@ export const WebSocketManager = ({
       }
     };
 
+    connect();
+
     return () => {
-      // Runs on unmount and dependency change
       console.log("Running cleanup for WebSocket connection");
-      ws.close();
+      ws?.close();
     };
     // Not including socket in the dependency array because it will trigger the close when it's set
   }, [isLoadingRoom, roomId, username]);
